@@ -6,7 +6,6 @@ from parameters import get_params
 from train import run_training
 from models.resnet_transfer import TransferResNet18
 
-# HW3: Yeni ekleyeceğimiz Robustness ve Attack fonksiyonunu import ediyoruz
 from run_hw3_robustness import run_robustness_evaluations
 
 def set_seed(seed: int) -> None:
@@ -67,8 +66,14 @@ def main() -> None:
     if params["mode"] in ["train", "both"]:
         run_training(model, params, device)
         
-    # 2. Evaluate Robustness and Perform Adversarial Attacks (HW3)
+    # 2. Evaluate Robustness and Perform Adversarial Attacks
     if params["mode"] in ["test", "attack", "both"]:
+        try:
+            model.load_state_dict(torch.load(params["save_path"], map_location=device))
+            print(f"\n[SUCCESS] Loaded trained weights from {params['save_path']}")
+        except FileNotFoundError:
+            print(f"\n[WARNING] Weights {params['save_path']} not found! Using random initialization.")
+            
         run_robustness_evaluations(model, params, device)
 
 if __name__ == "__main__":
