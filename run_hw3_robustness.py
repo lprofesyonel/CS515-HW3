@@ -8,12 +8,13 @@ import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.manifold import TSNE
 
-# HW3 New Attack and Visualization Libraries
+# HW3 New Attack, Visualization and Complexity Libraries
 import torchattacks
 from pytorch_grad_cam import GradCAM
 from pytorch_grad_cam.utils.image import show_cam_on_image
+from ptflops import get_model_complexity_info
 
-# Project imports (kd_loss_fn eklendi)
+# Project imports
 from train import get_loaders, kd_loss_fn
 from models.resnet_transfer import TransferResNet18
 from models.CNN import SimpleCNN
@@ -251,8 +252,15 @@ def run_robustness_evaluations(model: nn.Module, params: Dict[str, Any], device:
     plot_grad_cam(model, imgs, labels, pgd_linf, device)
     plot_tsne_adversarial(model, clean_loader, pgd_linf, device, num_samples=500)
     
-    # 4. Transferability and Knowledge Distillation Logic
+    # 4. Complexity Analysis (ptflops) & Knowledge Distillation
     student = SimpleCNN(num_classes=10).to(device)
+    
+    print("\n--- Model Complexity (ptflops) ---")
+    teacher_macs, teacher_params = get_model_complexity_info(model, (3, 32, 32), as_strings=True, print_per_layer_stat=False, verbose=False)
+    student_macs, student_params = get_model_complexity_info(student, (3, 32, 32), as_strings=True, print_per_layer_stat=False, verbose=False)
+    print(f"Teacher (ResNet-18) -> FLOPs (MACs): {teacher_macs}, Parameters: {teacher_params}")
+    print(f"Student (SimpleCNN) -> FLOPs (MACs): {student_macs}, Parameters: {student_params}")
+    
     student = train_student_kd(teacher=model, student=student, train_loader=train_loader, device=device, epochs=10)
     
     print("\n--- Evaluating Transferability ---")
